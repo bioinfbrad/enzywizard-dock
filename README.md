@@ -1,9 +1,6 @@
 
 # EnzyWizard-Dock
 
-
-# brief introduction:
-
 EnzyWizard-Dock is a command-line tool for performing molecular docking
 of one or multiple substrates with a cleaned protein structure and
 generating a detailed JSON report.
