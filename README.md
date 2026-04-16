@@ -4,7 +4,7 @@
 EnzyWizard-Dock is a command-line tool for performing molecular docking
 of one or multiple substrates with a cleaned protein structure and
 generating a detailed JSON report.
-It takes a cleaned CIF or PDB protein structure as input and performs docking
+It takes a CIF or PDB protein structure as input and performs docking
 using AutoDock Vina. The tool supports both single-substrate docking and
 simultaneous multi-substrate docking.
 For each substrate, multiple conformations (protomers) can be provided as
