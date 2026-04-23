@@ -1,3 +1,4 @@
+[![DOI](https://zenodo.org/badge/1219037963.svg)](https://doi.org/10.5281/zenodo.19709478)
 
 # EnzyWizard-Dock
 
