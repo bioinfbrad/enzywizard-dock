@@ -5,8 +5,10 @@ from typing import Any, Dict, List, Tuple
 import re
 
 from rdkit import Chem
-
+from Bio.PDB.Structure import Structure
 from ..utils.logging_utils import Logger
+import copy
+from ..utils.common_utils import get_optimized_filename
 
 def get_sdf_atom_info_from_mol(mol: Chem.Mol, logger: Logger) -> List[Dict[str, Any]] | None:
     if mol is None:
@@ -423,12 +425,17 @@ def get_substrate_sdf_path_group_dict(substrate_names: str,substrate_dir: str | 
         for substrate_name in substrate_name_list:
             matched_pairs: List[Tuple[int, str]] = []
 
-            pattern = re.compile(rf"^{re.escape(substrate_name)}_(\d+)$")
+            substrate_file_stem = get_optimized_filename(substrate_name)
+            if not substrate_file_stem:
+                logger.print(f"[ERROR] Invalid substrate filename generated from substrate: {substrate_name}")
+                return None
+
+            pattern = re.compile(rf"^{re.escape(substrate_file_stem)}_(\d+)$")
 
             for sdf_path in sdf_path_list:
                 stem = sdf_path.stem
 
-                if stem == substrate_name:
+                if stem == substrate_file_stem:
                     matched_pairs.append((0, str(sdf_path)))
                     continue
                 m = pattern.match(stem)
@@ -476,4 +483,33 @@ def compute_ligand_centroid(atom_info_list: List[Dict[str, Any]],logger: Logger)
 
     except Exception:
         logger.print("[ERROR] Failed to compute ligand centroid.")
+        return None
+
+def remove_hydrogens_from_structure(struct: Structure, logger) -> Structure | None:
+    if not isinstance(struct, Structure):
+        logger.print("[ERROR] struct must be a Bio.PDB Structure.")
+        return None
+
+    try:
+        new_struct = copy.deepcopy(struct)
+
+        for model in new_struct:
+            for chain in model:
+                for residue in chain:
+                    atom_id_list_to_remove = []
+
+                    for atom in residue:
+                        element = getattr(atom, "element", None)
+                        atom_name = str(atom.get_name()).strip()
+
+                        if element == "H" or (element is None and atom_name.startswith("H")):
+                            atom_id_list_to_remove.append(atom.id)
+
+                    for atom_id in atom_id_list_to_remove:
+                        residue.detach_child(atom_id)
+
+        return new_struct
+
+    except Exception:
+        logger.print("[ERROR] Failed to remove hydrogens from structure")
         return None

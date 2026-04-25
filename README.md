@@ -8,7 +8,7 @@ generating a detailed JSON report.
 It takes a CIF or PDB protein structure and substrate directory as input and performs docking
 using AutoDock Vina. The tool supports both single-substrate docking and
 simultaneous multi-substrate docking.
-For each substrate, multiple conformations (protomers) can be provided as
+For each substrate, multiple conformations can be provided as
 separate SDF files. The program automatically enumerates all possible
 combinations of conformations of the same substrate and performs docking to identify
 the optimal binding result.
@@ -81,14 +81,9 @@ Maximum number of docking attempts.
 Default:
   20
 
---early_stop
+--no_early_stop
 Optional.
-Whether to stop immediately after the first successful docking result.
-
-Default:
-  False
-
-If True, the program returns the first successful result and does not continue searching for a better one.
+Disable stopping immediately after the first successful docking result.
 
 --exhaustiveness
 Optional.

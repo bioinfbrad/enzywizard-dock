@@ -13,7 +13,7 @@ from Bio.PDB.Structure import Structure
 from ..utils.logging_utils import Logger
 from ..algorithms.pocket_algorithms import compute_pockets
 from ..utils.structure_utils import get_structure_box
-from ..utils.dock_utils import get_substrate_sdf_path_group_dict, compute_ligand_centroid
+from ..utils.dock_utils import get_substrate_sdf_path_group_dict, compute_ligand_centroid, remove_hydrogens_from_structure
 from ..utils.common_utils import get_optimized_filename
 
 VINA_SEED=202602
@@ -438,8 +438,13 @@ def dock_multiple_substrates_from_structure(
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_dir_path = Path(tmp_dir)
 
+            dock_struct = remove_hydrogens_from_structure(struct=struct, logger=logger)
+            if dock_struct is None:
+                logger.print("[ERROR] Failed to remove hydrogens from structure for docking.")
+                return None
+
             protein_pdbqt_path = tmp_dir_path / "protein.pdbqt"
-            ok = write_protein_pdbqt(struct=struct,pdbqt_path=protein_pdbqt_path,logger=logger)
+            ok = write_protein_pdbqt(struct=dock_struct,pdbqt_path=protein_pdbqt_path,logger=logger)
             if not ok:
                 logger.print("[ERROR] Failed to write protein PDBQT file.")
                 return None

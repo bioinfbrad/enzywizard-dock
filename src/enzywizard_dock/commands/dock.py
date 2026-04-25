@@ -9,8 +9,8 @@ def add_dock_parser(parser: ArgumentParser) -> None:
     parser.add_argument("-d","--substrate_dir",required=True,help="Path to a directory containing input substrate SDF files.")
     parser.add_argument("-o", "--output_dir",required=True,help="Directory to save docking outputs and the JSON report.")
     parser.add_argument("--max_docking_attempt_num",type=int,default=20,help="Maximum number of docking attempts (default: 20).")
-    parser.add_argument("--early_stop",action="store_true",help="Stop immediately after the first successful docking result (default: disabled).")
-    parser.set_defaults(early_stop=False)
+    parser.add_argument("--no_early_stop", action="store_false", dest="early_stop",help="Disable stopping immediately after the first successful docking result (default: enabled).")
+    parser.set_defaults(early_stop=True)
     parser.add_argument("--exhaustiveness",type=int,default=16,help="Exhaustiveness of AutoDock Vina search (default: 16). Larger values may improve docking search coverage but increase runtime.")
     parser.add_argument("--cpu",type=int,default=0,help="Number of CPUs used by AutoDock Vina (default: 0). A value of 0 lets Vina decide automatically.")
     parser.add_argument("--min_rad",type=float,default=1.8,help="Minimum probe radius used in pocket detection (default: 1.8). Smaller values may detect narrower cavities, but overly small values may cause PyVOL/MSMS failure.")
@@ -48,7 +48,7 @@ generating a detailed JSON report.
 It takes a CIF or PDB protein structure and substrate directory as input and performs docking
 using AutoDock Vina. The tool supports both single-substrate docking and
 simultaneous multi-substrate docking.
-For each substrate, multiple conformations (protomers) can be provided as
+For each substrate, multiple conformations can be provided as
 separate SDF files. The program automatically enumerates all possible
 combinations of conformations of the same substrate and performs docking to identify
 the optimal binding result.
@@ -121,14 +121,9 @@ Maximum number of docking attempts.
 Default:
   20
 
---early_stop
+--no_early_stop
 Optional.
-Whether to stop immediately after the first successful docking result.
-
-Default:
-  False
-
-If True, the program returns the first successful result and does not continue searching for a better one.
+Disable stopping immediately after the first successful docking result.
 
 --exhaustiveness
 Optional.
