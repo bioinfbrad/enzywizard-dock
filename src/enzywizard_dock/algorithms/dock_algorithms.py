@@ -13,7 +13,7 @@ from Bio.PDB.Structure import Structure
 from ..utils.logging_utils import Logger
 from ..algorithms.pocket_algorithms import compute_pockets
 from ..utils.structure_utils import get_structure_box
-from ..utils.dock_utils import get_substrate_sdf_path_group_dict, compute_ligand_centroid, remove_hydrogens_from_structure
+from ..utils.dock_utils import get_substrate_sdf_path_group_dict, compute_ligand_centroid, remove_hydrogens_from_structure, postprocess_dock_report_to_schema
 from ..utils.common_utils import get_optimized_filename
 
 VINA_SEED=202602
@@ -683,10 +683,14 @@ def save_docking_results_and_generate_dock_report(
             "docked_substrates": ligand_report_list,
         }
 
-        return {
+        raw_report = {
             "output_type": "enzywizard_dock",
             "docked_result": best_report,
         }
+
+        schema_report = postprocess_dock_report_to_schema(raw_report)
+
+        return schema_report
 
     except Exception as e:
         import traceback

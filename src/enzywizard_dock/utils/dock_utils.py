@@ -513,3 +513,35 @@ def remove_hydrogens_from_structure(struct: Structure, logger) -> Structure | No
     except Exception:
         logger.print("[ERROR] Failed to remove hydrogens from structure")
         return None
+
+def postprocess_dock_report_to_schema(raw_report: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Postprocess the raw EnzyWizard-Dock report into the official JSON Schema field names.
+    """
+
+    raw_docked_result = raw_report.get("docked_result", {})
+
+    schema_docked_substrates = []
+
+    for raw_docked_substrate in raw_docked_result.get("docked_substrates", []):
+        schema_docked_substrates.append(
+            {
+                "docked_substrate_name": raw_docked_substrate.get("substrate_name"),
+                "docked_substrate_structure_name": raw_docked_substrate.get("conformation_name"),
+                "docked_substrate_center_coordinate": raw_docked_substrate.get("docked_center_coord"),
+            }
+        )
+
+    schema_report = {
+        "report_type": raw_report.get("output_type"),
+        "enzyme_substrate_docking_result": {
+            "enzyme_substrate_complex_name": raw_docked_result.get("complex_name"),
+            "enzyme_substrate_binding_affinity": raw_docked_result.get("docking_score"),
+            "docked_substrate_names": raw_docked_result.get("substrate_names"),
+            "docking_box_center_coordinate": raw_docked_result.get("docking_box_center"),
+            "docking_box_size": raw_docked_result.get("docking_box_size"),
+            "docked_substrates": schema_docked_substrates,
+        },
+    }
+
+    return schema_report
