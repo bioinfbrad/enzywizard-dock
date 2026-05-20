@@ -11,7 +11,8 @@ For each substrate, multiple conformations can be provided as
 separate SDF files. The program automatically enumerates all possible
 combinations of conformations of the same substrate and performs docking to identify
 the optimal enzyme-substrate docking result.
-Binding pockets are detected using PyVOL with a global docking box as fallback.
+By default, binding pockets are detected using PyVOL with a global docking box as fallback.
+Alternatively, a docking box can be defined manually using a catalytic residue index or catalytic site coordinate together with a box size.
 The tool outputs structured docking results suitable for downstream
 applications such as enzyme-substrate interaction analysis, binding mode
 evaluation, and enzyme characterising.
@@ -123,6 +124,40 @@ Minimum pocket volume threshold.
 Default:
   50
 
+--catalytic_residue
+Optional.
+Cleaned protein residue index used as the docking box center.
+
+Example:
+  121
+
+This parameter is an integer residue index from the cleaned protein structure.
+The CA atom coordinate of this residue is used as the docking box center.
+When this parameter is provided, --box_size is required.
+This parameter cannot be used together with --catalytic_site_coord.
+When this parameter is provided, PyVOL pocket detection and the global docking box fallback are not used.
+
+--catalytic_site_coord
+Optional.
+Catalytic site center coordinate separated by ','.
+
+Example:
+  12.5,8.0,-3.2
+
+When this parameter is provided, --box_size is required.
+This parameter cannot be used together with --catalytic_residue.
+When this parameter is provided, PyVOL pocket detection and the global docking box fallback are not used.
+
+--box_size
+Optional.
+Docking box size separated by ','.
+
+Example:
+  20,20,20
+
+This parameter is required when --catalytic_residue or --catalytic_site_coord is provided.
+All three values must be positive numbers.
+
 
 # output content:
 
@@ -214,47 +249,53 @@ This command processes the input cleaned protein structure as follows:
    - Check that the input file exists.
    - Validate that the structure satisfies the cleaned-structure requirement.
 
-3. Detect pocket regions
-   - Use PyVOL to detect pocket regions from the protein structure.
+3. Determine docking box mode
+   - If --catalytic_residue is provided, use the CA coordinate of that cleaned protein residue as the docking box center.
+   - If --catalytic_site_coord is provided, use that coordinate as the docking box center.
+   - In either manual docking box mode, use --box_size as the docking box size and skip PyVOL pocket detection and the global docking box fallback.
+   - If no manual docking box parameter is provided, continue with automatic pocket detection.
 
-4. Compute global docking box
-   - Calculate a bounding box covering the entire protein structure.
+4. Detect pocket regions
+   - In automatic docking box mode, use PyVOL to detect pocket regions from the protein structure.
 
-5. Parse substrate inputs
+5. Compute global docking box
+   - In automatic docking box mode, calculate a bounding box covering the entire protein structure.
+
+6. Parse substrate inputs
    - Split substrate_names by ',' to obtain substrate list.
 
-6. Search substrate files
+7. Search substrate files
    - Locate matched SDF files for each substrate in substrate_dir.
 
-7. Enumerate substrate conformations
+8. Enumerate substrate conformations
    - Treat multiple SDF files of the same substrate as alternative conformations.
    - Generate all combinations of substrate conformations.
 
-8. Prepare docking inputs
+9. Prepare docking inputs
    - Convert protein structure to receptor PDBQT format.
    - Convert each substrate SDF to ligand PDBQT format.
 
-9. Build docking boxes
-   - Use pocket-based boxes.
-   - Add one global structure box.
+10. Build docking boxes
+   - In automatic docking box mode, use pocket-based boxes and add one global structure box.
+   - In manual docking box mode, use one user-defined box.
 
-10. Perform docking
+11. Perform docking
    - Iterate over substrate combinations and docking boxes.
    - Perform AutoDock Vina docking for each case.
 
-11. Parse docking results
+12. Parse docking results
    - Extract docking poses and predicted binding affinities.
    - Map docked coordinates back to original ligand atoms.
 
-12. Select best result
+13. Select best result
    - Choose the docking result with lowest predicted binding affinity.
    - Optionally stop early if early_stop=True.
    
-13. Save docking outputs
+14. Save docking outputs
    - Write docked substrate SDF files.
    - Generate enzyme-substrate complex CIF file.
 
-14. Generate report
+15. Generate report
    - Save structured JSON report summarizing the enzyme-substrate docking result.
 
 

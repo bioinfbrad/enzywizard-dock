@@ -12,7 +12,7 @@ from ..utils.IO_utils import load_sdf_mol_3d, write_protein_pdbqt,write_substrat
 from Bio.PDB.Structure import Structure
 from ..utils.logging_utils import Logger
 from ..algorithms.pocket_algorithms import compute_pockets
-from ..utils.structure_utils import get_structure_box
+from ..utils.structure_utils import get_structure_box, get_residue_ca_coord_by_aa_id
 from ..utils.dock_utils import get_substrate_sdf_path_group_dict, compute_ligand_centroid, remove_hydrogens_from_structure, postprocess_dock_report_to_schema
 from ..utils.common_utils import get_optimized_filename
 
@@ -306,7 +306,10 @@ def dock_multiple_substrates_from_structure(
     cpu: int = 0,
     min_rad: float = 1.8,
     max_rad: float = 6.2,
-    min_volume: int = 50
+    min_volume: int = 50,
+    catalytic_residue: int | None = None,
+    catalytic_site_coord_list: List[float] | None = None,
+    manual_box_size_list: List[float] | None = None
 ) -> List[Dict[str, Any]] | None:
     if struct is None:
         logger.print("[ERROR] struct is None.")
@@ -348,33 +351,13 @@ def dock_multiple_substrates_from_structure(
         logger.print("[ERROR] cpu must be a non-negative integer.")
         return None
 
-    if min_rad <= 0.0:
-        logger.print("[ERROR] min_rad must be positive.")
-        return None
+    use_manual_box = catalytic_residue is not None or catalytic_site_coord_list is not None
 
-    if max_rad <= 0.0:
-        logger.print("[ERROR] max_rad must be positive.")
-        return None
-
-    if min_volume < 0:
-        logger.print("[ERROR] min_volume must be non-negative.")
-        return None
-
-    if min_rad > max_rad:
-        logger.print("[ERROR] min_rad must not be greater than max_rad.")
+    if catalytic_residue is not None and catalytic_site_coord_list is not None:
+        logger.print("[ERROR] catalytic_residue and catalytic_site_coord_list cannot be used together.")
         return None
 
     substrate_dir = Path(substrate_dir)
-
-    pocket_result_list = compute_pockets(struct=struct,logger=logger,min_rad=min_rad,max_rad=max_rad,min_volume=min_volume)
-    if pocket_result_list is None:
-        logger.print("[ERROR] Failed to compute pockets.")
-        return None
-
-    structure_box_info = get_structure_box(struct=struct, logger=logger)
-    if structure_box_info is None:
-        logger.print("[ERROR] Failed to compute structure box.")
-        return None
 
     grouped_result = get_substrate_sdf_path_group_dict(substrate_names=substrate_names,substrate_dir=substrate_dir,logger=logger)
     if grouped_result is None:
@@ -401,34 +384,98 @@ def dock_multiple_substrates_from_structure(
 
     box_info_list: List[Dict[str, Any]] = []
 
-    for pocket_result in pocket_result_list:
-        pocket_center_coord = pocket_result.get("pocket_center_coord", None)
-        pocket_box_boundaries = pocket_result.get("pocket_box_boundaries", None)
+    if use_manual_box:
+        if manual_box_size_list is None or len(manual_box_size_list) != 3:
+            logger.print("[ERROR] manual_box_size_list must contain exactly 3 values.")
+            return None
 
-        if not isinstance(pocket_center_coord, list) or len(pocket_center_coord) != 3 or not isinstance(pocket_box_boundaries, list) or len(pocket_box_boundaries) != 3:
-            logger.print("[ERROR] Invalid pocket box information.")
+        try:
+            box_size_list = [float(x) for x in manual_box_size_list]
+        except Exception:
+            logger.print("[ERROR] manual_box_size_list must contain numeric values.")
+            return None
+
+        if any(x <= 0.0 for x in box_size_list):
+            logger.print("[ERROR] manual_box_size_list values must be positive.")
+            return None
+
+        if catalytic_residue is not None:
+            box_center_list = get_residue_ca_coord_by_aa_id(struct=struct, aa_id=catalytic_residue, logger=logger)
+            if box_center_list is None:
+                return None
+            logger.print(f"[INFO] Using catalytic residue aa_id {catalytic_residue} CA coordinate as docking box center.")
+        else:
+            if not isinstance(catalytic_site_coord_list, list) or len(catalytic_site_coord_list) != 3:
+                logger.print("[ERROR] catalytic_site_coord_list must contain exactly 3 values.")
+                return None
+            try:
+                box_center_list = [float(x) for x in catalytic_site_coord_list]
+            except Exception:
+                logger.print("[ERROR] catalytic_site_coord_list must contain numeric values.")
+                return None
+            logger.print("[INFO] Using catalytic site coordinate as docking box center.")
+
+        box_info_list.append(
+            {
+                "box_center_list": box_center_list,
+                "box_size_list": box_size_list,
+            }
+        )
+    else:
+        if min_rad <= 0.0:
+            logger.print("[ERROR] min_rad must be positive.")
+            return None
+
+        if max_rad <= 0.0:
+            logger.print("[ERROR] max_rad must be positive.")
+            return None
+
+        if min_volume < 0:
+            logger.print("[ERROR] min_volume must be non-negative.")
+            return None
+
+        if min_rad > max_rad:
+            logger.print("[ERROR] min_rad must not be greater than max_rad.")
+            return None
+
+        pocket_result_list = compute_pockets(struct=struct,logger=logger,min_rad=min_rad,max_rad=max_rad,min_volume=min_volume)
+        if pocket_result_list is None:
+            logger.print("[ERROR] Failed to compute pockets.")
+            return None
+
+        structure_box_info = get_structure_box(struct=struct, logger=logger)
+        if structure_box_info is None:
+            logger.print("[ERROR] Failed to compute structure box.")
+            return None
+
+        for pocket_result in pocket_result_list:
+            pocket_center_coord = pocket_result.get("pocket_center_coord", None)
+            pocket_box_boundaries = pocket_result.get("pocket_box_boundaries", None)
+
+            if not isinstance(pocket_center_coord, list) or len(pocket_center_coord) != 3 or not isinstance(pocket_box_boundaries, list) or len(pocket_box_boundaries) != 3:
+                logger.print("[ERROR] Invalid pocket box information.")
+                return None
+
+            box_info_list.append(
+                {
+                    "box_center_list": [float(x) for x in pocket_center_coord],
+                    "box_size_list": [float(x) for x in pocket_box_boundaries],
+                }
+            )
+
+        center_coord = structure_box_info.get("center_coord", None)
+        box_boundaries = structure_box_info.get("box_boundaries", None)
+
+        if not isinstance(center_coord, list) or len(center_coord) != 3 or not isinstance(box_boundaries, list) or len(box_boundaries) != 3:
+            logger.print("[ERROR] Invalid structure box information.")
             return None
 
         box_info_list.append(
             {
-                "box_center_list": [float(x) for x in pocket_center_coord],
-                "box_size_list": [float(x) for x in pocket_box_boundaries],
+                "box_center_list": [float(x) for x in center_coord],
+                "box_size_list": [float(x) for x in box_boundaries],
             }
         )
-
-    center_coord = structure_box_info.get("center_coord", None)
-    box_boundaries = structure_box_info.get("box_boundaries", None)
-
-    if not isinstance(center_coord, list) or len(center_coord) != 3 or not isinstance(box_boundaries, list) or len(box_boundaries) != 3:
-        logger.print("[ERROR] Invalid structure box information.")
-        return None
-
-    box_info_list.append(
-        {
-            "box_center_list": [float(x) for x in center_coord],
-            "box_size_list": [float(x) for x in box_boundaries],
-        }
-    )
 
     best_result: Dict[str, Any] | None = None
     docking_attempt_count = 0

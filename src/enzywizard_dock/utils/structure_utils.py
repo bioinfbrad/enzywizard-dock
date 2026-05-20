@@ -68,6 +68,35 @@ def get_residues_by_chain(chain: Chain, logger: Logger) -> List[Tuple[Tuple[str,
 
     return result
 
+def get_residue_ca_coord_by_aa_id(struct: Structure, aa_id: int, logger: Logger) -> List[float] | None:
+    if struct is None:
+        logger.print("[ERROR] Structure input is None.")
+        return None
+
+    if not isinstance(aa_id, int) or aa_id <= 0:
+        logger.print("[ERROR] catalytic_residue must be a positive integer aa_id.")
+        return None
+
+    chain = get_single_chain(struct, logger)
+    if chain is None:
+        return None
+
+    residue_list = get_residues_by_chain(chain, logger)
+    if residue_list is None or len(residue_list) == 0:
+        logger.print("[ERROR] Failed to get cleaned protein residues.")
+        return None
+
+    valid_aa_id_list = [int(residue_key[1]) for residue_key, _, _ in residue_list]
+    for residue_key, _, coord in residue_list:
+        if int(residue_key[1]) == aa_id:
+            return [float(coord[0]), float(coord[1]), float(coord[2])]
+
+    logger.print(
+        f"[ERROR] catalytic_residue aa_id {aa_id} is out of range. "
+        f"Valid aa_id range: {min(valid_aa_id_list)}-{max(valid_aa_id_list)}."
+    )
+    return None
+
 def get_sequence(residues: List[Tuple[Tuple[str, int, str], str, Tuple[float, float, float]]],logger: Logger) -> str | None:
 
     if residues is None:
@@ -127,5 +156,3 @@ def get_structure_box(struct: Structure, logger: Logger) -> Dict[str, Any] | Non
     except Exception:
         logger.print("[ERROR] Failed to compute box space for Structure.")
         return None
-
-

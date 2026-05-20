@@ -16,6 +16,9 @@ def add_dock_parser(parser: ArgumentParser) -> None:
     parser.add_argument("--min_rad",type=float,default=1.8,help="Minimum probe radius used in pocket detection (default: 1.8). Smaller values may detect narrower cavities, but overly small values may cause PyVOL/MSMS failure.")
     parser.add_argument("--max_rad",type=float,default=6.2,help="Maximum probe radius used in pocket detection (default: 6.2). Larger values may detect broader cavities, but overly large values may cause PyVOL/MSMS failure.")
     parser.add_argument("--min_volume",type=int,default=50,help="Minimum pocket volume threshold used to filter detected pocket regions (default: 50). Larger values retain only larger pocket candidates.")
+    parser.add_argument("--catalytic_residue",type=int,default=None,help="Cleaned protein residue index used as the docking box center. Requires '--box_size'. When this parameter is provided, PyVOL pocket detection is not used.")
+    parser.add_argument("--catalytic_site_coord",default=None,help="Catalytic site center coordinate separated by ',' as 'x,y,z'. Requires '--box_size'. When this parameter is provided, PyVOL pocket detection is not used.")
+    parser.add_argument("--box_size",default=None,help="Docking box size separated by ',' as 'x,y,z'. Required when '--catalytic_residue' or '--catalytic_site_coord' is provided.")
 
     parser.set_defaults(func=run_dock)
 
@@ -33,6 +36,7 @@ def run_dock(args: Namespace) -> None:
         min_rad=args.min_rad,
         max_rad=args.max_rad,
         min_volume=args.min_volume,
+        catalytic_residue=args.catalytic_residue,
+        catalytic_site_coord=args.catalytic_site_coord,
+        box_size=args.box_size,
     )
-
-
