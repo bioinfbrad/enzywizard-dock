@@ -22,7 +22,7 @@ evaluation, and enzyme characterising.
 
 Example command:
 
-enzywizard-dock -i examples/input/cleaned_3GP6.cif -s glucose,fructose -d examples/input/ -o examples/output/
+enzywizard-dock -i examples/input/cleaned_3GP6.cif -s "glucose;fructose" -d examples/input/ -o examples/output/
 
 
 # input parameters:
@@ -33,16 +33,16 @@ Path to the input cleaned protein structure file in CIF or PDB format.
 
 -s, --substrate_names
 Required.
-Input substrate names separated by ','.
+Input substrate names separated by ';'.
 
 Examples:
 - glucose
-- glucose,fructose
-- smiles1,smiles2
+- glucose;fructose
+- smiles1;smiles2
 
 This parameter represents a multi-substrate combination for docking.
 
-For input substrate_names "SubstrateA,SubstrateB", the program searches
+For input substrate_names "SubstrateA;SubstrateB", the program searches
 substrate_dir for matched SDF files:
 
 - SubstrateA.sdf
@@ -262,7 +262,7 @@ This command processes the input cleaned protein structure as follows:
    - In automatic docking box mode, calculate a bounding box covering the entire protein structure.
 
 6. Parse substrate inputs
-   - Split substrate_names by ',' to obtain substrate list.
+   - Split substrate_names by ';' to obtain substrate list.
 
 7. Search substrate files
    - Locate matched SDF files for each substrate in substrate_dir.

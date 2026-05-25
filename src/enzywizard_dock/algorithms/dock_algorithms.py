@@ -196,11 +196,11 @@ def dock_multiple_ligands_with_vina(
         return None
 
     if pose_string is None or energies is None:
-        logger.print(f"[ERROR] Vina docking output parsed wrongly: {','.join(input_name_list)} in: {box_center} {box_size}.")
+        logger.print(f"[ERROR] Vina docking output parsed wrongly: {';'.join(input_name_list)} in: {box_center} {box_size}.")
         return None
 
     if len(str(pose_string).strip()) == 0 and len(energies) == 0:
-        logger.print(f"[WARNING] Vina docking output is empty for: {','.join(input_name_list)} in: {box_center} {box_size}.")
+        logger.print(f"[WARNING] Vina docking output is empty for: {';'.join(input_name_list)} in: {box_center} {box_size}.")
         return []
 
     if pose_string is None or energies is None:
@@ -241,7 +241,7 @@ def dock_multiple_ligands_with_vina(
         return None
 
     result_list: List[Dict[str, Any]] = []
-    joined_substrate_names = ",".join(input_name_list)
+    joined_substrate_names = ";".join(input_name_list)
 
     try:
         for pose_index in range(pose_num):

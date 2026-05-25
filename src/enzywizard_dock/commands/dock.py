@@ -5,7 +5,7 @@ from ..services.dock_service import run_dock_service
 
 def add_dock_parser(parser: ArgumentParser) -> None:
     parser.add_argument("-i", "--input_path",required=True,help="Path to the input cleaned protein structure file in CIF or PDB format.")
-    parser.add_argument("-s", "--substrate_names",required=True,help="Input substrate names separated by ','. Each substrate name must match corresponding SDF file names in substrate_dir.")
+    parser.add_argument("-s", "--substrate_names",required=True,help="Input substrate names separated by ';'. Each substrate name must match corresponding SDF file names in substrate_dir.")
     parser.add_argument("-d","--substrate_dir",required=True,help="Path to a directory containing input substrate SDF files.")
     parser.add_argument("-o", "--output_dir",required=True,help="Directory to save docking outputs and the JSON report.")
     parser.add_argument("--max_docking_attempt_num",type=int,default=20,help="Maximum number of docking attempts (default: 20).")

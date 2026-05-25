@@ -407,7 +407,7 @@ def get_substrate_sdf_path_group_dict(substrate_names: str,substrate_dir: str | 
         return None
 
     try:
-        substrate_name_list = [item.strip() for item in substrate_names.split(",")]
+        substrate_name_list = [item.strip() for item in substrate_names.split(";")]
         substrate_name_list = [item for item in substrate_name_list if item]
 
         if len(substrate_name_list) == 0:
