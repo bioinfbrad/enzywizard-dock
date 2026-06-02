@@ -516,7 +516,7 @@ def write_docked_complex_from_mol_list(
                     altloc=" ",
                     fullname=fullname,
                     serial_number=serial_number,
-                    element=symbol.capitalize(),
+                    element=symbol,
                 )
                 ligand_residue.add(pdb_atom)
 

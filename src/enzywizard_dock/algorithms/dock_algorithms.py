@@ -680,9 +680,8 @@ def save_docking_results_and_generate_dock_report(
             if original_mol_3d is None:
                 return None
 
-            sdf_name = f"docked_{substrate_name}.sdf"
-            sdf_name = get_optimized_filename(sdf_name)
-            sdf_path = output_dir / sdf_name
+            sdf_stem = get_optimized_filename(f"docked_{substrate_name}")
+            sdf_path = output_dir / f"{sdf_stem}.sdf"
 
             docked_mol = write_docked_sdf_from_atom_info(
                 original_mol_3d=original_mol_3d,
